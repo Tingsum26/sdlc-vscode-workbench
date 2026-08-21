@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "id": "INTERNAL-HOOKS-001",
+      "component": "vscode-extension",
+      "markerPaths": [
+        "src/customization/bundleInstaller.ts"
+      ],
+      "action": "Confirm Copilot hook policy and replace local Node no-op actions with approved deterministic hooks.",
+      "evidence": "Sanitized hook activation log.",
+      "rollback": "Disable hook activation while retaining bundle installation."
+    }
+  ]
+}
