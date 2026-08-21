@@ -1,0 +1,68 @@
+{
+  "name": "sdlc-workbench",
+  "displayName": "Local Copilot SDLC Workbench",
+  "description": "Human-controlled SDLC state, reports, approvals, MCP onboarding, and diagnostics for local Copilot workflows.",
+  "version": "0.1.0",
+  "publisher": "tingsum26",
+  "private": true,
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/Tingsum26/sdlc-vscode-workbench.git" },
+  "files": ["dist/extension.js", "media/workflow.svg", "media/trusted-hook.mjs", "LICENSE"],
+  "engines": { "vscode": "^1.100.0" },
+  "categories": ["Other", "Visualization", "Testing"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "esbuild src/extension.ts --bundle --external:vscode --platform=node --format=cjs --outfile=dist/extension.js",
+    "test": "vitest run",
+    "package": "pnpm typecheck && pnpm build && vsce package --no-dependencies -o dist/sdlc-workbench.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.6",
+    "@types/vscode": "1.100.0",
+    "@vscode/vsce": "3.6.2",
+    "esbuild": "0.28.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [{ "id": "sdlcWorkbench", "title": "SDLC Workbench", "icon": "media/workflow.svg" }]
+    },
+    "views": {
+      "sdlcWorkbench": [
+        { "id": "sdlc.myWork", "name": "My Work" },
+        { "id": "sdlc.scrumMaster", "name": "Scrum Master View" },
+        { "id": "sdlc.epic", "name": "Epic View" },
+        { "id": "sdlc.ticket", "name": "Ticket View" },
+        { "id": "sdlc.identityPod", "name": "Identity / Pod Configuration" },
+        { "id": "sdlc.customization", "name": "Customization Center" },
+        { "id": "sdlc.mcpCenter", "name": "MCP Center" },
+        { "id": "sdlc.diagnostics", "name": "Diagnostics" }
+      ]
+    },
+    "commands": [
+      { "command": "sdlc.refreshTasks", "title": "SDLC: Refresh Tasks" },
+      { "command": "sdlc.selectEpic", "title": "SDLC: Select Epic" },
+      { "command": "sdlc.openTask", "title": "SDLC: Open Task" },
+      { "command": "sdlc.openReport", "title": "SDLC: Open HTML Report" },
+      { "command": "sdlc.openJourneyReport", "title": "SDLC: Open Journey Readiness Report" },
+      { "command": "sdlc.approve", "title": "SDLC: Approve Exact Version" },
+      { "command": "sdlc.copyCopilotCommand", "title": "SDLC: Copy Copilot Command" },
+      { "command": "sdlc.installCustomizationBundle", "title": "SDLC: Install Reviewed Customization Bundle" },
+      { "command": "sdlc.rollbackCustomizationBundle", "title": "SDLC: Roll Back Customization Bundle" },
+      { "command": "sdlc.openMcpCenter", "title": "SDLC: Open MCP Center" },
+      { "command": "sdlc.checkMcpHealth", "title": "SDLC: Check MCP Health" }
+    ],
+    "configuration": {
+      "title": "Local Copilot SDLC Workbench",
+      "properties": {
+        "sdlc.workflowServiceUrl": { "type": "string", "default": "http://127.0.0.1:8080", "description": "Workflow Service URL." },
+        "sdlc.demoActorId": { "type": "string", "default": "", "description": "MVP loopback-only demo actor. Leave empty outside local demo." },
+        "sdlc.foregroundPollSeconds": { "type": "number", "default": 60, "minimum": 15 },
+        "sdlc.backgroundPollSeconds": { "type": "number", "default": 300, "minimum": 60 }
+      }
+    }
+  }
+}

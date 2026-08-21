@@ -1,0 +1,10 @@
+{
+  "servers": [
+    { "id": "workflow", "deployment": "LOCAL", "required": true, "purpose": "Persist and resume SDLC tasks, artifacts, approvals, CI and E2E state", "containsModel": false },
+    { "id": "jira", "deployment": "LOCAL_INTERNAL_ADAPTER", "required": false, "purpose": "Read ticket context and post milestone summaries", "containsModel": false },
+    { "id": "confluence", "deployment": "LOCAL_INTERNAL_ADAPTER", "required": false, "purpose": "Read authorized team knowledge", "containsModel": false },
+    { "id": "github-enterprise", "deployment": "LOCAL_INTERNAL_ADAPTER", "required": false, "purpose": "Read repository, PR and check context", "containsModel": false },
+    { "id": "figma-desktop", "deployment": "LOCAL_OPTIONAL", "required": false, "purpose": "Read approved design context", "containsModel": false },
+    { "id": "code-graph", "deployment": "LOCAL_EXPERIMENT", "required": false, "purpose": "Architecture and cross-repository HTTP relationships", "containsModel": false }
+  ]
+}
