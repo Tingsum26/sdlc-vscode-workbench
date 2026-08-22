@@ -4,9 +4,17 @@ import { retainLastKnownData, toViewState, type Freshness } from "./viewState.js
 import { emptyItem, errorItem, loadingItem, safeMessage, statusIcon } from "./treeItems.js";
 import type { ViewStateWithFreshness, WorkflowViewsClient } from "./types.js";
 
+/** A task row carrying its ids so inline claim/resume/copy actions can target it. */
+class TaskItem extends vscode.TreeItem {
+  constructor(label: string, public readonly taskId: string, public readonly ticketId: string) {
+    super(label, vscode.TreeItemCollapsibleState.None);
+  }
+}
+
 /**
  * My Work view: the actionable task backlog (COMPLETED/CANCELLED excluded),
- * each row carrying the ticket, repository alias, and poll freshness.
+ * each row carrying the ticket, repository alias, and poll freshness, with
+ * inline claim / resume / copy-copilot-command actions via the item context.
  */
 export class MyWorkProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private readonly changed = new vscode.EventEmitter<void>();
@@ -40,7 +48,7 @@ export class MyWorkProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
   private taskItem(task: WorkflowTask, freshness: Freshness): vscode.TreeItem {
     const label = `${task.scope.ticketId} · ${task.status}`;
     const evidenceClassification = task.evidenceClassification ?? "REAL";
-    const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+    const item = new TaskItem(label, task.taskId, task.scope.ticketId);
     item.description = `${task.scope.repositoryAlias} · ${evidenceClassification} · ${freshness}`;
     item.tooltip = `${task.taskId}\nEvidence: ${evidenceClassification}\nVersion ${task.version}\nUpdated ${task.updatedAt}\nFreshness: ${freshness}`;
     item.iconPath = statusIcon(task.status);

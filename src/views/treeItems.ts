@@ -28,11 +28,20 @@ export function loadingItem(): vscode.TreeItem {
 }
 
 /** A clickable row that runs a workbench command. */
-export function commandItem(label: string, command: string): vscode.TreeItem {
+export function commandItem(label: string, command: string, args?: unknown[]): vscode.TreeItem {
   const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
-  item.command = { command, title: label };
+  item.command = args === undefined ? { command, title: label } : { command, title: label, arguments: args };
   item.iconPath = new vscode.ThemeIcon("run");
   item.accessibilityInformation = { label: `${label}. Command.` };
+  return item;
+}
+
+/** A non-interactive section heading row used to group related rows. */
+export function sectionItem(label: string): vscode.TreeItem {
+  const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+  item.description = "section";
+  item.iconPath = new vscode.ThemeIcon("symbol-property");
+  item.accessibilityInformation = { label: `${label}. Section.` };
   return item;
 }
 

@@ -76,6 +76,7 @@ export class TicketProvider implements vscode.TreeDataProvider<vscode.TreeItem>,
     item.description = `${ticket.channel} · ${evidenceClassification} · ${freshness}`;
     item.tooltip = `Channel ${ticket.channel}\nEvidence: ${evidenceClassification}\nVersion ${ticket.version}\nFreshness: ${freshness}`;
     item.iconPath = statusIcon(ticket.status);
+    item.contextValue = "sdlc.ticket";
     item.accessibilityInformation = { label: `${label}. Channel ${ticket.channel}. Evidence ${evidenceClassification}. Status ${ticket.status}. Freshness ${freshness}.` };
     return item;
   }
@@ -97,6 +98,7 @@ export class TicketProvider implements vscode.TreeDataProvider<vscode.TreeItem>,
     item.description = `${task.repositoryAlias} · ${evidenceClassification}`;
     item.tooltip = `Evidence: ${evidenceClassification}\nVersion ${task.version}`;
     item.iconPath = statusIcon(task.status);
+    item.contextValue = "sdlc.repoTask";
     item.accessibilityInformation = { label: `${label}. ${task.repositoryAlias}. Evidence ${evidenceClassification}. Status ${task.status}.` };
     return item;
   }

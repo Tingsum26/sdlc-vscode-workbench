@@ -3,6 +3,13 @@ import { retainLastKnownData, toViewState, type Freshness } from "./viewState.js
 import { commandItem, emptyItem, errorItem, loadingItem, safeMessage } from "./treeItems.js";
 import { INSTALLED_BUNDLES_KEY, type InstalledBundle, type KeyValueStore, type ViewStateWithFreshness } from "./types.js";
 
+/** An installed-bundle row carrying its version so rollback-to targets it. */
+class BundleItem extends vscode.TreeItem {
+  constructor(label: string, public readonly version: string) {
+    super(label, vscode.TreeItemCollapsibleState.None);
+  }
+}
+
 /**
  * Customization Center view: installed bundle versions from the globalState
  * store plus the install/rollback/copy commands that drive that store.
@@ -42,10 +49,11 @@ export class CustomizationProvider implements vscode.TreeDataProvider<vscode.Tre
   }
 
   private bundleItem(bundle: InstalledBundle, freshness: Freshness): vscode.TreeItem {
-    const item = new vscode.TreeItem(bundle.version, vscode.TreeItemCollapsibleState.None);
+    const item = new BundleItem(bundle.version, bundle.version);
     item.description = `${bundle.installedAt} · ${freshness}`;
     item.tooltip = `Root ${bundle.root}\nInstalled ${bundle.installedAt}`;
     item.iconPath = new vscode.ThemeIcon("package");
+    item.contextValue = "sdlc.bundle";
     item.accessibilityInformation = { label: `${bundle.version}. ${bundle.installedAt}. Installed bundle. Freshness ${freshness}.` };
     return item;
   }

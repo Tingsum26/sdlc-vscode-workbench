@@ -53,8 +53,43 @@
       { "command": "sdlc.installCustomizationBundle", "title": "SDLC: Install Reviewed Customization Bundle" },
       { "command": "sdlc.rollbackCustomizationBundle", "title": "SDLC: Roll Back Customization Bundle" },
       { "command": "sdlc.openMcpCenter", "title": "SDLC: Open MCP Center" },
-      { "command": "sdlc.checkMcpHealth", "title": "SDLC: Check MCP Health" }
+      { "command": "sdlc.checkMcpHealth", "title": "SDLC: Check MCP Health" },
+      { "command": "sdlc.claimTask", "title": "SDLC: Claim Task" },
+      { "command": "sdlc.resumeTask", "title": "SDLC: Resume Task" },
+      { "command": "sdlc.copyTaskCopilotCommand", "title": "SDLC: Copy Copilot Command for Task" },
+      { "command": "sdlc.createEpic", "title": "SDLC: Create Epic" },
+      { "command": "sdlc.activateEpic", "title": "SDLC: Activate Epic" },
+      { "command": "sdlc.createChangeRequest", "title": "SDLC: Create Change Request" },
+      { "command": "sdlc.approveChangeRequest", "title": "SDLC: Approve Change Request" },
+      { "command": "sdlc.addEpicDependency", "title": "SDLC: Add Epic Dependency" },
+      { "command": "sdlc.advanceTicket", "title": "SDLC: Advance Ticket" },
+      { "command": "sdlc.requestApproval", "title": "SDLC: Request Approval" },
+      { "command": "sdlc.skipTicket", "title": "SDLC: Skip Ticket with Reason" },
+      { "command": "sdlc.openTicketArtifact", "title": "SDLC: Open Ticket Artifact Report" },
+      { "command": "sdlc.importPodRoster", "title": "SDLC: Import Pod Roster" },
+      { "command": "sdlc.copyStandupDigest", "title": "SDLC: Copy Standup Digest" },
+      { "command": "sdlc.rollbackBundleTo", "title": "SDLC: Roll Back to Bundle Version" },
+      { "command": "sdlc.checkMcpHealthLatency", "title": "SDLC: Check MCP Health (Latency)" }
     ],
+    "menus": {
+      "view/item/context": [
+        { "command": "sdlc.claimTask", "when": "view == sdlc.myWork && viewItem == sdlcTask", "group": "sdlc@1" },
+        { "command": "sdlc.resumeTask", "when": "view == sdlc.myWork && viewItem == sdlcTask", "group": "sdlc@2" },
+        { "command": "sdlc.copyTaskCopilotCommand", "when": "view == sdlc.myWork && viewItem == sdlcTask", "group": "sdlc@3" },
+        { "command": "sdlc.activateEpic", "when": "view == sdlc.epic && viewItem == sdlc.epic", "group": "sdlc@1" },
+        { "command": "sdlc.createChangeRequest", "when": "view == sdlc.epic && viewItem == sdlc.epic", "group": "sdlc@2" },
+        { "command": "sdlc.addEpicDependency", "when": "view == sdlc.epic && viewItem == sdlc.epic", "group": "sdlc@3" },
+        { "command": "sdlc.advanceTicket", "when": "view == sdlc.ticket && viewItem == sdlc.ticket", "group": "sdlc@1" },
+        { "command": "sdlc.requestApproval", "when": "view == sdlc.ticket && viewItem == sdlc.ticket", "group": "sdlc@2" },
+        { "command": "sdlc.skipTicket", "when": "view == sdlc.ticket && viewItem == sdlc.ticket", "group": "sdlc@3" },
+        { "command": "sdlc.openTicketArtifact", "when": "view == sdlc.ticket && viewItem == sdlc.ticket", "group": "sdlc@4" },
+        { "command": "sdlc.rollbackBundleTo", "when": "view == sdlc.customization && viewItem == sdlc.bundle", "group": "sdlc@1" }
+      ],
+      "view/title": [
+        { "command": "sdlc.createEpic", "when": "view == sdlc.epic", "group": "sdlc@1" },
+        { "command": "sdlc.importPodRoster", "when": "view == sdlc.identityPod", "group": "sdlc@1" }
+      ]
+    },
     "configuration": {
       "title": "Local Copilot SDLC Workbench",
       "properties": {

@@ -4,7 +4,14 @@ import { retainLastKnownData, toViewState, type Freshness } from "./viewState.js
 import { emptyItem, errorItem, loadingItem, safeMessage, statusIcon } from "./treeItems.js";
 import type { EpicSelection, ViewStateWithFreshness, WorkflowViewsClient } from "./types.js";
 
-/** Epic view: the journey epics with their lifecycle status. */
+/** An epic row carrying its id so activate/change-request/dependency actions target it. */
+class EpicItem extends vscode.TreeItem {
+  constructor(label: string, public readonly epicId: string) {
+    super(label, vscode.TreeItemCollapsibleState.None);
+  }
+}
+
+/** Epic view: the journey epics with their lifecycle status and inline lifecycle actions. */
 export class EpicProvider implements vscode.TreeDataProvider<vscode.TreeItem>, vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
@@ -38,7 +45,7 @@ export class EpicProvider implements vscode.TreeDataProvider<vscode.TreeItem>, v
 
   private epicItem(epic: EpicSummary, freshness: Freshness): vscode.TreeItem {
     const label = `${epic.epicId} · ${epic.title}`;
-    const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+    const item = new EpicItem(label, epic.epicId);
     item.description = `${epic.status} · ${freshness}`;
     item.tooltip = `Journey ${epic.journeyId}\nVersion ${epic.version}\nFreshness: ${freshness}`;
     item.iconPath = statusIcon(epic.status);

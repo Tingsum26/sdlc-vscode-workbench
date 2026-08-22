@@ -2,6 +2,10 @@ import type {
   EnterpriseIdentity,
   EpicResume,
   EpicSummary,
+  HealthLatency,
+  IntegrationDiagnostic,
+  JourneyFreshnessMap,
+  NextInternalValidation,
   PodMember,
   RepoTaskSummary,
   TicketSummary,
@@ -25,6 +29,20 @@ export interface WorkflowViewsClient {
   listRepoTasks(ticketId: string): Promise<RepoTaskSummary[]>;
   getIdentity(): Promise<EnterpriseIdentity>;
   getPodMembers(journeyId: string): Promise<PodMember[]>;
+}
+
+/** Client surface the MCP Center view needs to fetch live data and probe health. */
+export interface McpCenterClient {
+  getMcpCatalog(): Promise<McpCatalogEntry[]>;
+  healthLatency(): Promise<HealthLatency>;
+}
+
+/** Client surface the Diagnostics view needs to self-refresh its snapshot. */
+export interface ReadinessClient {
+  getIdentity(): Promise<EnterpriseIdentity>;
+  getIntegrationDiagnostics(): Promise<IntegrationDiagnostic[]>;
+  getNextInternalValidation(): Promise<NextInternalValidation>;
+  listJourneyFreshness(): Promise<JourneyFreshnessMap>;
 }
 
 /** Store-shaped subset of vscode.Memento used by the customization view. */

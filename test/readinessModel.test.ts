@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildReadinessRows } from "../src/views/readinessModel.js";
+import { buildJourneyFreshnessRows, buildReadinessRows } from "../src/views/readinessModel.js";
 
 describe("readiness view model", () => {
   it("shows identity, evidence text, source, observation time, and next validation without color-only meaning", () => {
@@ -11,5 +11,14 @@ describe("readiness view model", () => {
     expect(rows.map((row) => row.label)).toEqual(["Identity · EMP-100", "JIRA · SIMULATED_PASS", "Next validation · JIRA"]);
     expect(rows[1]?.description).toContain("deterministic-fake");
     expect(rows[1]?.tooltip).toContain("2026-08-16");
+  });
+
+  it("maps journey freshness aliases to sorted LIVE/DELAYED/STALE/OFFLINE badge rows", () => {
+    const rows = buildJourneyFreshnessRows({ CARD_REPLACEMENT: "STALE", ACCOUNT_OPENING: "LIVE", LEGACY: "OFFLINE" });
+    expect(rows.map((row) => row.label)).toEqual(["Journey · ACCOUNT_OPENING", "Journey · CARD_REPLACEMENT", "Journey · LEGACY"]);
+    expect(rows[0]?.description).toBe("LIVE");
+    expect(rows[0]?.status).toBe("LIVE");
+    expect(rows[1]?.status).toBe("STALE");
+    expect(rows[2]?.status).toBe("OFFLINE");
   });
 });

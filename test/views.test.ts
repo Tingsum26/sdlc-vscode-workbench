@@ -26,7 +26,7 @@ vi.mock("vscode", () => ({
 
 import * as vscode from "vscode";
 import { MyWorkProvider } from "../src/views/myWorkProvider.js";
-import { ScrumMasterProvider } from "../src/views/scrumMasterProvider.js";
+import { buildStandupDigest, ScrumMasterProvider } from "../src/views/scrumMasterProvider.js";
 import { EpicProvider } from "../src/views/epicProvider.js";
 import { TicketProvider } from "../src/views/ticketProvider.js";
 import { IdentityPodProvider } from "../src/views/identityPodProvider.js";
@@ -298,6 +298,82 @@ describe("view providers", () => {
     expect(items[0]!.label).toBe("workflow-mcp");
     expect(items[0]!.description).toMatch(/^required · (LIVE|DELAYED|STALE|OFFLINE)$/);
     expect(items[1]!.description).toMatch(/^optional · (LIVE|DELAYED|STALE|OFFLINE)$/);
+  });
+
+  it("mcp center fetches a live catalog, falls back to bundled, and reports health latency", async () => {
+    const client = {
+      getMcpCatalog: vi.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: "live-mcp", name: "Live MCP", required: true, skills: ["a"] }]),
+      healthLatency: vi.fn().mockResolvedValue({ ok: true, latencyMs: 12 }),
+    };
+    const provider = new McpCenterProvider(
+      [{ id: "bundled-mcp", name: "Bundled MCP", required: false, skills: [] }],
+      client as never,
+    );
+    await provider.refresh();
+    let labels = (provider.getChildren() as vscode.TreeItem[]).map((item) => String(item.label));
+    expect(labels).toContain("Catalog · bundled fallback");
+    expect(labels).toContain("bundled-mcp");
+    expect(labels).toContain("Check MCP health");
+
+    await provider.refresh();
+    labels = (provider.getChildren() as vscode.TreeItem[]).map((item) => String(item.label));
+    expect(labels).toContain("Catalog · live service");
+    expect(labels).toContain("live-mcp");
+
+    provider.setHealth({ ok: true, latencyMs: 12 });
+    labels = (provider.getChildren() as vscode.TreeItem[]).map((item) => String(item.label));
+    expect(labels).toContain("MCP health · OK");
+  });
+
+  it("scrum master appends blockers, an epic summary, and a standup digest action", async () => {
+    const selection = new EpicSelectionStore();
+    selection.select("EPIC-LIVE-7");
+    const resume = {
+      epic: { epicId: "EPIC-M2-1", title: "Account opening", journeyId: "ACCOUNT_OPENING", status: "ACTIVE", version: 3 },
+      tickets: [
+        { ticket: { ticketId: "M2-API-1", epicId: "EPIC-M2-1", channel: "API", status: "PR_OPEN", pendingChangeConfirmation: false, version: 5 }, openTasks: [], nextAction: "Open the PR" },
+        { ticket: { ticketId: "M2-API-2", epicId: "EPIC-M2-1", channel: "API", status: "BLOCKED", pendingChangeConfirmation: false, version: 6 }, openTasks: [], nextAction: "Resolve dependency" },
+      ],
+      auditTrail: [],
+    };
+    const provider = new ScrumMasterProvider({ getEpicResume: vi.fn().mockResolvedValue(resume) } as never, selection);
+    await provider.refresh();
+    const labels = (provider.getChildren() as vscode.TreeItem[]).map((item) => String(item.label));
+    expect(labels[0]).toContain("M2-API-1");
+    expect(labels).toContain("Blockers (1)");
+    expect(labels).toContain("M2-API-2 · BLOCKED");
+    expect(labels).toContain("Epic · Account opening");
+    expect(labels).toContain("Copy standup digest");
+  });
+
+  it("buildStandupDigest summarizes tickets, blockers, and open tasks", () => {
+    const resume = {
+      epic: { epicId: "EPIC-M2-1", title: "Account opening", journeyId: "ACCOUNT_OPENING", status: "ACTIVE", version: 3 },
+      tickets: [
+        { ticket: { ticketId: "M2-API-1", epicId: "EPIC-M2-1", channel: "API", status: "PR_OPEN", pendingChangeConfirmation: false, version: 5 }, openTasks: [{ taskId: "TASK-1" } as never], nextAction: "Open the PR" },
+        { ticket: { ticketId: "M2-API-2", epicId: "EPIC-M2-1", channel: "API", status: "BLOCKED", pendingChangeConfirmation: false, version: 6 }, openTasks: [], nextAction: "Resolve dependency" },
+      ],
+      auditTrail: [],
+    };
+    const digest = buildStandupDigest(resume as never);
+    expect(digest).toContain("Standup — EPIC-M2-1 · Account opening");
+    expect(digest).toContain("Status: ACTIVE · v3 · Journey ACCOUNT_OPENING");
+    expect(digest).toContain("Tickets: 2 · Blocked: 1 · Open tasks: 1");
+    expect(digest).toContain("- M2-API-1 [PR_OPEN]: Open the PR");
+    expect(digest).toContain("- M2-API-2 [BLOCKED]: Resolve dependency");
+  });
+
+  it("identity view offers a roster import action", async () => {
+    const client = {
+      getIdentity: vi.fn().mockResolvedValue({ employeeId: "EMP-100", displayLabel: "Fictional Scrum Master", source: "ADMIN_BINDING" }),
+      getPodMembers: vi.fn().mockResolvedValue([]),
+    };
+    const provider = new IdentityPodProvider(client as never);
+    await provider.refresh();
+    const labels = (provider.getChildren() as vscode.TreeItem[]).map((item) => String(item.label));
+    expect(labels).toContain("Import pod roster (CSV)");
   });
 
   it("every provider item carries accessibilityInformation with text status and freshness", async () => {

@@ -24,7 +24,15 @@ export interface EpicResume { epic: EpicSummary; tickets: Array<{ ticket: Ticket
 export interface PodMember { principalId: string; employeeId: string; displayLabel: string; role: string; onboardingStatus: string }
 export interface JourneyFreshnessMap { [alias: string]: string }
 
+export interface EpicChangeRequest { changeRequestId: string; epicId: string; title: string; status: string; requestedBy: string }
+export interface HealthLatency { ok: boolean; latencyMs: number }
+export interface PodMemberImportInput { employeeId: string; displayLabel: string; role: string; principalId?: string }
+export interface PodMemberValidation { valid: boolean; errors: string[]; members: PodMember[] }
+/** Shape of the MCP catalog returned by the workflow-service diagnostics endpoint. */
+export interface McpCatalogServer { id: string; name: string; required: boolean; skills: string[] }
+
 export class WorkflowClient {
+  private static readonly REQUEST_TIMEOUT_MS = 15_000;
   private etag: string | undefined;
   private cachedTasks: WorkflowTask[] = [];
   private readonly baseUrl: string;
@@ -118,14 +126,93 @@ export class WorkflowClient {
     return (await this.json("/api/v1/journeys/freshness", { method: "POST", body: JSON.stringify(manifest) }, signal)) as JourneyFreshnessMap;
   }
 
+  /** Overall per-journey freshness map (no manifest), for the Diagnostics overview. */
+  listJourneyFreshness(signal?: AbortSignal): Promise<JourneyFreshnessMap> {
+    return this.json("/api/v1/journeys/freshness", { method: "GET" }, signal) as Promise<JourneyFreshnessMap>;
+  }
+
+  async getTicket(ticketId: string): Promise<TicketSummary> {
+    return this.json(`/api/v1/tickets/${encodeURIComponent(ticketId)}`) as Promise<TicketSummary>;
+  }
+
+  async claimTask(taskId: string): Promise<WorkflowTask> {
+    return this.json(`/api/v1/tasks/${encodeURIComponent(taskId)}/claim`, { method: "POST" }) as Promise<WorkflowTask>;
+  }
+
+  async resumeTask(taskId: string): Promise<WorkflowTask> {
+    return this.json(`/api/v1/tasks/${encodeURIComponent(taskId)}/resume`, { method: "POST" }) as Promise<WorkflowTask>;
+  }
+
+  async advanceTicket(ticketId: string): Promise<TicketSummary> {
+    return this.json(`/api/v1/tickets/${encodeURIComponent(ticketId)}/advance`, { method: "POST" }) as Promise<TicketSummary>;
+  }
+
+  async requestApproval(ticketId: string): Promise<TicketSummary> {
+    return this.json(`/api/v1/tickets/${encodeURIComponent(ticketId)}/request-approval`, { method: "POST" }) as Promise<TicketSummary>;
+  }
+
+  async skipTicket(ticketId: string, reason: string): Promise<TicketSummary> {
+    return this.json(`/api/v1/tickets/${encodeURIComponent(ticketId)}/skip`, { method: "POST", body: JSON.stringify({ reason }) }) as Promise<TicketSummary>;
+  }
+
+  async createEpic(input: { title: string; journeyId: string }): Promise<EpicSummary> {
+    return this.json("/api/v1/epics", { method: "POST", body: JSON.stringify(input) }) as Promise<EpicSummary>;
+  }
+
+  async activateEpic(epicId: string): Promise<EpicSummary> {
+    return this.json(`/api/v1/epics/${encodeURIComponent(epicId)}/activate`, { method: "POST" }) as Promise<EpicSummary>;
+  }
+
+  async createChangeRequest(epicId: string, input: { title: string }): Promise<EpicChangeRequest> {
+    return this.json(`/api/v1/epics/${encodeURIComponent(epicId)}/change-requests`, { method: "POST", body: JSON.stringify(input) }) as Promise<EpicChangeRequest>;
+  }
+
+  async approveChangeRequest(epicId: string, changeRequestId: string): Promise<EpicChangeRequest> {
+    return this.json(`/api/v1/epics/${encodeURIComponent(epicId)}/change-requests/${encodeURIComponent(changeRequestId)}/approve`, { method: "POST" }) as Promise<EpicChangeRequest>;
+  }
+
+  async addEpicDependency(epicId: string, input: { dependsOnEpicId: string }): Promise<EpicSummary> {
+    return this.json(`/api/v1/epics/${encodeURIComponent(epicId)}/dependencies`, { method: "POST", body: JSON.stringify(input) }) as Promise<EpicSummary>;
+  }
+
+  async validatePodMembers(journeyId: string, members: PodMemberImportInput[]): Promise<PodMemberValidation> {
+    return this.json(`/api/v1/internal-readiness/pods/${encodeURIComponent(journeyId)}/members/validate`, { method: "POST", body: JSON.stringify({ members }) }) as Promise<PodMemberValidation>;
+  }
+
+  async importPodMembers(journeyId: string, members: PodMemberImportInput[]): Promise<PodMember[]> {
+    return this.json(`/api/v1/internal-readiness/pods/${encodeURIComponent(journeyId)}/members/import`, { method: "POST", body: JSON.stringify({ members }) }) as Promise<PodMember[]>;
+  }
+
+  async getMcpCatalog(signal?: AbortSignal): Promise<McpCatalogServer[]> {
+    return (await this.json("/api/v1/diagnostics/mcp-catalog", { method: "GET" }, signal)) as McpCatalogServer[];
+  }
+
+  /** Actuator health probe with round-trip latency, never throws. */
+  async healthLatency(): Promise<HealthLatency> {
+    const started = Date.now();
+    try {
+      const response = await this.fetcher(`${this.baseUrl}/actuator/health`, { headers: this.headers() });
+      return { ok: response.ok, latencyMs: Date.now() - started };
+    } catch { return { ok: false, latencyMs: Date.now() - started }; }
+  }
+
   private async json(path: string, init: RequestInit = {}, signal?: AbortSignal): Promise<unknown> {
-    const response = await this.fetcher(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: this.headers(),
-      ...(signal === undefined ? {} : { signal }),
-    });
-    await this.requireOk(response);
-    return response.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), WorkflowClient.REQUEST_TIMEOUT_MS);
+    const abortFromCaller = (): void => controller.abort();
+    signal?.addEventListener("abort", abortFromCaller, { once: true });
+    try {
+      const response = await this.fetcher(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: this.headers(),
+        signal: controller.signal,
+      });
+      await this.requireOk(response);
+      return response.json();
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abortFromCaller);
+    }
   }
 
   private headers(): Record<string, string> {

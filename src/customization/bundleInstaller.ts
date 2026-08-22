@@ -127,6 +127,19 @@ export async function rollbackCustomizationBundle(context: vscode.ExtensionConte
   void vscode.window.showInformationMessage(`Rolled back SDLC customizations to ${choice.entry.version}.`);
 }
 
+/** Rolls the active customization set back to a specific installed version. */
+export async function rollbackBundleToVersion(context: vscode.ExtensionContext, version: string): Promise<void> {
+  const installed = context.globalState.get<InstalledBundle[]>(stateKey, []);
+  const entry = installed.find((candidate) => candidate.version === version);
+  if (!entry) {
+    void vscode.window.showInformationMessage(`No SDLC customization bundle version ${version} is installed.`);
+    return;
+  }
+  const reordered = [entry, ...installed.filter((candidate) => candidate.version !== version)];
+  await activateBundleTransaction(context, entry.root, reordered);
+  void vscode.window.showInformationMessage(`Rolled back SDLC customizations to ${entry.version}.`);
+}
+
 async function activateBundleTransaction(
   context: vscode.ExtensionContext,
   root: string,

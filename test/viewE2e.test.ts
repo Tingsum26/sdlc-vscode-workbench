@@ -167,6 +167,16 @@ describe("extension activation E2E", () => {
     expect(context.subscriptions.length).toBeGreaterThan(0);
     expect(registry.commands.has("sdlc.refreshTasks")).toBe(true);
     expect(registry.commands.has("sdlc.selectEpic")).toBe(true);
+    for (const id of [
+      "sdlc.claimTask", "sdlc.resumeTask", "sdlc.copyTaskCopilotCommand",
+      "sdlc.createEpic", "sdlc.activateEpic", "sdlc.createChangeRequest",
+      "sdlc.approveChangeRequest", "sdlc.addEpicDependency",
+      "sdlc.advanceTicket", "sdlc.requestApproval", "sdlc.skipTicket",
+      "sdlc.openTicketArtifact", "sdlc.importPodRoster", "sdlc.copyStandupDigest",
+      "sdlc.rollbackBundleTo", "sdlc.checkMcpHealthLatency",
+    ]) {
+      expect(registry.commands.has(id), `command ${id} registered`).toBe(true);
+    }
 
     // The fan-out refresh went through the real WorkflowClient + mocked fetch.
     expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/v1/tasks"), expect.anything());
@@ -177,9 +187,13 @@ describe("extension activation E2E", () => {
     expect(labelsOf("sdlc.epic")).toContain("EPIC-M2-1 · Account opening");
     expect(labelsOf("sdlc.ticket")).toContain("M2-API-1 · PR_OPEN");
     expect(labelsOf("sdlc.identityPod").join("\n")).toContain("EMP-201");
+    expect(labelsOf("sdlc.identityPod")).toContain("Import pod roster (CSV)");
     expect(labelsOf("sdlc.customization")).toContain("No installed bundles");
     expect(labelsOf("sdlc.mcpCenter")).toContain("workflow");
     expect(labelsOf("sdlc.mcpCenter")).toContain("Open MCP onboarding");
+    expect(labelsOf("sdlc.mcpCenter")).toContain("Catalog · bundled fallback");
+    expect(labelsOf("sdlc.mcpCenter")).toContain("Check MCP health");
+    expect(labelsOf("sdlc.scrumMaster")).toContain("Copy standup digest");
 
     // Ticket view nests Repo Task children under a ticket item.
     const ticketProvider = registry.treeProviders.get("sdlc.ticket") as unknown as TicketProvider;
@@ -259,5 +273,30 @@ describe("extension activation E2E", () => {
     expect(fetcher).toHaveBeenCalled();
     expect(labelsOf("sdlc.myWork")[0]).toContain("Error: Workflow request failed (401)");
     configValues.demoActorId = "DEMO-ACTOR";
+  });
+
+  it("renders journey freshness badges in Diagnostics and runs an inline task claim action", async () => {
+    const fetcher = vi.fn(async (input: string | URL | Request): Promise<Response> => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/journeys/freshness")) return jsonResponse({ ACCOUNT_OPENING: "LIVE", CARD_REPLACEMENT: "STALE" });
+      if (url.endsWith("/api/v1/tasks/TASK-1/claim")) return jsonResponse(task);
+      return routeWorkflow(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+
+    activate(mockContext());
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const diagnostics = registry.treeProviders.get("sdlc.diagnostics") as { getChildren(): ReadinessRow[] };
+    const rows = diagnostics.getChildren();
+    expect(rows.some((row) => row.label === "Journey · ACCOUNT_OPENING" && row.description === "LIVE")).toBe(true);
+    expect(rows.some((row) => row.label === "Journey · CARD_REPLACEMENT" && row.description === "STALE")).toBe(true);
+
+    // Inline claim action drives the client endpoint and the refresh fan-out.
+    await registry.commands.get("sdlc.claimTask")!({ taskId: "TASK-1" });
+    expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/v1/tasks/TASK-1/claim"), expect.anything());
+    expect(labelsOf("sdlc.myWork")).toContain("DEMO-123 · WAITING_FOR_LOCAL_COPILOT");
   });
 });

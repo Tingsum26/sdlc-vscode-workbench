@@ -1,4 +1,4 @@
-import type { EnterpriseIdentity, IntegrationDiagnostic, NextInternalValidation } from "../api/workflowClient.js";
+import type { EnterpriseIdentity, IntegrationDiagnostic, JourneyFreshnessMap, NextInternalValidation } from "../api/workflowClient.js";
 
 export interface ReadinessRow { label: string; description: string; tooltip: string; status: string }
 
@@ -27,4 +27,16 @@ export function buildReadinessRows(
     status: next.status ?? "COMPLETE",
   });
   return rows;
+}
+
+/** Journey freshness overview: one row per journey alias with its LIVE/DELAYED/STALE/OFFLINE badge. */
+export function buildJourneyFreshnessRows(freshness: JourneyFreshnessMap): ReadinessRow[] {
+  return Object.entries(freshness)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([alias, badge]) => ({
+      label: `Journey · ${alias}`,
+      description: badge,
+      tooltip: `Journey ${alias} freshness: ${badge}`,
+      status: badge === "LIVE" ? "LIVE" : badge === "DELAYED" ? "DELAYED" : badge === "STALE" ? "STALE" : "OFFLINE",
+    }));
 }

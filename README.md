@@ -31,6 +31,31 @@ Workflow Service. It contains no model client of any kind.
 GitHub Copilot Chat session the user starts and supervises, and all workflow tool access goes
 through the **Local MCP Gateway** (`sdlc-workflow-mcp`), never from inside this extension.
 
+## Views
+
+Eight activity-bar views, each with its own data model and inline actions (no shared generic
+task provider):
+
+- **My Work** — the actionable task backlog with status icons and per-item inline actions
+  (*Claim Task*, *Resume Task*, *Copy Copilot Command for Task*).
+- **Scrum Master View** — next-action hints per ticket, a blockers section, an epic resume
+  summary node, and a *Copy Standup Digest* action built from the epic resume endpoint.
+- **Epic View** — journey epics with lifecycle status; inline *Activate Epic*, *Create Change
+  Request*, *Approve Change Request*, and *Add Dependency* actions, plus *Create Epic* via an
+  InputBox flow. The selected epic live-drives the Ticket and Scrum views.
+- **Ticket View** — the selected epic's tickets with nested Repo Tasks; inline *Advance*,
+  *Request Approval*, *Skip with Reason*, and *Open Ticket Artifact Report* (HTML report
+  reveal) actions.
+- **Identity / Pod Configuration** — the bound identity card and the pod member table, plus a
+  *Import Pod Roster* flow (CSV file pick → service validation → confirm import).
+- **Customization Center** — installed bundle versions with dates, install/rollback actions,
+  and a per-bundle *Roll Back to Bundle Version* action (reusing the bundle installer module).
+- **MCP Center** — the MCP catalog fetched live from the workflow-service diagnostics endpoint
+  (falling back to the bundled static catalog), plus a *Check MCP Health* action with
+  round-trip latency display.
+- **Diagnostics** — a self-refreshing readiness snapshot, integration diagnostics results, and
+  a journey freshness overview with LIVE/DELAYED/STALE/OFFLINE badges.
+
 ## Platform BOM
 
 This repository is one entry in the seven-repository split. See the platform BOM at
@@ -41,9 +66,9 @@ compatibility rules).
 ## Registered gap
 
 The seven-repository gap audit records the VSIX entry as **PARTIAL**: the approved target is
-8 semantically distinct view models and actions, while the current implementation registers
-the 8 view IDs with mostly generic task providers. This repository is the vertical-slice
-implementation, not the completed target.
+8 semantically distinct view models and actions. This repository now registers the 8 views
+with distinct data models and inline actions (see [Views](#views)); the audit entry is closed
+by this slice's view work.
 
 ## Develop
 

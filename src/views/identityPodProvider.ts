@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import type { EnterpriseIdentity, PodMember } from "../api/workflowClient.js";
 import { retainLastKnownData, toViewState, type Freshness } from "./viewState.js";
-import { emptyItem, errorItem, loadingItem, safeMessage } from "./treeItems.js";
+import { commandItem, emptyItem, errorItem, loadingItem, safeMessage } from "./treeItems.js";
 import { ACCOUNT_OPENING_JOURNEY, type ViewStateWithFreshness, type WorkflowViewsClient } from "./types.js";
 
 interface IdentityPodData {
@@ -43,6 +43,7 @@ export class IdentityPodProvider implements vscode.TreeDataProvider<vscode.TreeI
     if (this.state.warning) rows.unshift(errorItem(`Last refresh failed; showing ${this.state.freshness} data: ${this.state.warning}`));
     rows.push(...members.map((member) => this.memberItem(member, this.state.freshness)));
     if (members.length === 0) rows.push(emptyItem("No pod members"));
+    rows.push(commandItem("Import pod roster (CSV)", "sdlc.importPodRoster"));
     return rows;
   }
 
