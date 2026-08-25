@@ -15,6 +15,17 @@ The workbench is a **UI-only** VS Code extension. It renders SDLC state, reports
 MCP onboarding, and diagnostics into the Activity Bar, and it issues REST calls to a local
 Workflow Service. It contains no model client of any kind.
 
+## GitHub-only MVP mode
+
+When the opened workspace contains `.sdlc/workflow.json`, the extension enters
+GitHub-only MVP mode. The eight views read the Journey branch directly from the
+workspace and display its stage, artifacts, Context Receipt freshness, linked
+repositories, and next Coordinator command. This mode does not require a
+Workflow Service, Workflow MCP, MongoDB, or Jenkins. File changes under
+`.sdlc/` and `docs/` refresh the views automatically. The previous REST-backed
+views remain available when no Journey workspace is detected as a Phase 2
+compatibility path.
+
 - **Views** (8 registered, M6 model — Repo Task is nested under Ticket): My Work, Scrum
   Master, Epic, Ticket, Identity / Pod Configuration, Customization Center, MCP Center,
   and Diagnostics.

@@ -22,6 +22,7 @@ import { openApprovalPanel } from "./webview/approvalPanel.js";
 import { escapeHtml, shell } from "./webview/html.js";
 import { openReportPanel } from "./webview/reportPanel.js";
 import { openJourneyReportPanel } from "./webview/journeyReportPanel.js";
+import { activateGitHubOnlyMvp } from "./mvp/githubOnlyProvider.js";
 
 const viewIds = ["sdlc.myWork", "sdlc.scrumMaster", "sdlc.epic", "sdlc.ticket",
   "sdlc.identityPod", "sdlc.customization", "sdlc.mcpCenter", "sdlc.diagnostics"];
@@ -33,7 +34,7 @@ const viewIds = ["sdlc.myWork", "sdlc.scrumMaster", "sdlc.epic", "sdlc.ticket",
  * ids and required flags as the central catalog.
  */
 const mcpCatalog: McpCatalogEntry[] = [
-  { id: "workflow", name: "Workflow MCP", required: true, skills: ["start-epic", "join-epic", "change-epic", "start-ticket", "resume-workflow", "import-pod-members"] },
+  { id: "workflow", name: "Workflow MCP (Phase 2)", required: false, skills: ["start-epic", "join-epic", "change-epic", "start-ticket", "resume-workflow", "import-pod-members"] },
   { id: "jira", name: "Jira MCP", required: false, skills: [] },
   { id: "confluence", name: "Confluence MCP", required: false, skills: [] },
   { id: "github-enterprise", name: "GitHub MCP", required: false, skills: [] },
@@ -44,6 +45,7 @@ const mcpCatalog: McpCatalogEntry[] = [
 export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel("Local Copilot SDLC");
   const logger = new ExtensionLogger(output);
+  if (activateGitHubOnlyMvp(context, output)) return;
   const config = () => vscode.workspace.getConfiguration("sdlc");
   const client = () => new WorkflowClient(config().get<string>("workflowServiceUrl", "http://127.0.0.1:8080"),
     fetch, config().get<string>("demoActorId") || undefined);
