@@ -22,7 +22,10 @@ GitHub-only MVP mode. The eight views read the Journey branch directly from the
 workspace and display its stage, artifacts, Context Receipt freshness, linked
 repositories, and next Coordinator command. This mode does not require a
 Workflow Service, Workflow MCP, MongoDB, or Jenkins. File changes under
-`.sdlc/` and `docs/` refresh the views automatically. The previous REST-backed
+`.sdlc/` and `docs/` refresh the views automatically. Every Journey artifact
+Markdown row is clickable and opens a script-free HTML Agent Report; the
+report panel watches that file and updates when an Agent, `git pull`, or a
+human edits it. The previous REST-backed
 views remain available when no Journey workspace is detected as a Phase 2
 compatibility path.
 
@@ -31,6 +34,8 @@ compatibility path.
   and Diagnostics.
 - Task freshness polling (foreground/background, with exponential backoff).
 - Exact-version approval, safe HTML reports, Journey readiness reports.
+- Live, human-readable HTML rendering for every Agent artifact with missing/
+  changed-file feedback; the VSIX never writes or approves the artifact.
 - Reviewed customization-bundle install/rollback with symlink rejection and secret screening.
 - Static MCP catalog mirror plus a loopback-restricted demo-actor guard.
 - Fictional public data throughout (`DEMO-123`, `REPO_A`, `example.invalid`).
