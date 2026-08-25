@@ -7,7 +7,7 @@ export interface JourneyArtifactSnapshot { id: string; path: string; status: str
 export type JourneyGateState = "WAITING_FOR_APPROVAL" | "READY_FOR_NEXT_AGENT" | "COMPLETED" | "BLOCKED";
 export interface JourneySnapshot {
   root: string; workflowId: string; journeyId: string; branch: string; currentStage: string; status: string;
-  artifacts: JourneyArtifactSnapshot[]; currentOutputStatus: string; gateState: JourneyGateState;
+  artifacts: JourneyArtifactSnapshot[]; currentOutputId?: string; currentOutputPath?: string; currentOutputStatus: string; gateState: JourneyGateState;
   nextRole?: string; nextStage?: string; nextAgent?: string; sourceTickets: string[];
   affectedRepositories: string[]; updatedAt: number;
 }
@@ -57,7 +57,7 @@ export function readJourneySnapshot(root: string): JourneySnapshot {
   return {
     root, workflowId: String(state.workflowId ?? "UNKNOWN"), journeyId: String(state.journeyId ?? "UNKNOWN"),
     branch: String(state.branch ?? "UNKNOWN"), currentStage, status: String(state.status ?? "UNKNOWN"),
-    artifacts, currentOutputStatus, gateState,
+    artifacts, ...(currentOutputId ? { currentOutputId } : {}), ...(currentOutputId && state.artifacts?.[currentOutputId]?.path ? { currentOutputPath: String(state.artifacts[currentOutputId].path) } : {}), currentOutputStatus, gateState,
     ...(stage?.role ? { nextRole: String(stage.role) } : {}), ...(nextStage ? { nextStage } : {}), ...(nextAgent ? { nextAgent } : {}),
     sourceTickets: Array.isArray(state.sourceTickets) ? state.sourceTickets.map(String) : [],
     affectedRepositories: Array.isArray(state.affectedRepositories)

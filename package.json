@@ -48,6 +48,7 @@
       { "command": "sdlc.openTask", "title": "SDLC: Open Task" },
       { "command": "sdlc.openReport", "title": "SDLC: Open HTML Report" },
       { "command": "sdlc.openJourneyReport", "title": "SDLC: Open Journey Readiness Report" },
+      { "command": "sdlc.openJourneyArtifact", "title": "SDLC: Open Journey Agent Report" },
       { "command": "sdlc.approve", "title": "SDLC: Approve Exact Version" },
       { "command": "sdlc.copyCopilotCommand", "title": "SDLC: Copy Copilot Command" },
       { "command": "sdlc.installCustomizationBundle", "title": "SDLC: Install Reviewed Customization Bundle" },

@@ -31,6 +31,8 @@ describe("GitHub-only Journey workspace", () => {
       expect(snapshot.nextAgent).toBe("requirement-analyst");
       expect(snapshot.gateState).toBe("WAITING_FOR_APPROVAL");
       expect(snapshot.currentOutputStatus).toBe("DRAFT");
+      expect(snapshot.currentOutputId).toBe("REQUIREMENT_CONTRACT");
+      expect(snapshot.currentOutputPath).toBe("docs/02-requirements/requirement-contract.md");
       expect(snapshot.artifacts.map((artifact) => artifact.receipt)).toEqual(["NOT_REQUIRED", "OK", "MISSING"]);
     } finally {
       rmSync(root, { recursive: true, force: true });
