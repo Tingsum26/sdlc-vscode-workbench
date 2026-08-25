@@ -4,9 +4,11 @@ import { join } from "node:path";
 
 export type ReceiptState = "OK" | "STALE" | "MISSING" | "NOT_REQUIRED";
 export interface JourneyArtifactSnapshot { id: string; path: string; status: string; receipt: ReceiptState; }
+export type JourneyGateState = "WAITING_FOR_APPROVAL" | "READY_FOR_NEXT_AGENT" | "COMPLETED" | "BLOCKED";
 export interface JourneySnapshot {
   root: string; workflowId: string; journeyId: string; branch: string; currentStage: string; status: string;
-  artifacts: JourneyArtifactSnapshot[]; nextRole?: string; sourceTickets: string[];
+  artifacts: JourneyArtifactSnapshot[]; currentOutputStatus: string; gateState: JourneyGateState;
+  nextRole?: string; nextStage?: string; nextAgent?: string; sourceTickets: string[];
   affectedRepositories: string[]; updatedAt: number;
 }
 
@@ -37,11 +39,26 @@ export function readJourneySnapshot(root: string): JourneySnapshot {
   const artifacts = Object.entries((state.artifacts ?? {}) as Record<string, any>).map(([id, value]) => ({
     id, path: String(value.path), status: String(value.status ?? "UNKNOWN"), receipt: receiptState(root, String(value.path), String(value.status ?? "UNKNOWN")),
   }));
-  const stage = state.stages?.[state.currentStage];
+  const stageOrder = Array.isArray(state.stageOrder) ? state.stageOrder.map(String) : [];
+  const currentStage = String(state.currentStage ?? "UNKNOWN");
+  const stage = state.stages?.[currentStage];
+  const currentOutputId = stage?.output ? String(stage.output) : undefined;
+  const currentOutputStatus = currentOutputId ? String(state.artifacts?.[currentOutputId]?.status ?? "UNKNOWN") : "UNKNOWN";
+  const currentIndex = stageOrder.indexOf(currentStage);
+  const outputApproved = currentOutputStatus === "APPROVED" || currentOutputStatus === "SKIPPED_WITH_EVIDENCE";
+  const hasNextStage = currentIndex >= 0 && currentIndex < stageOrder.length - 1;
+  const nextStage = outputApproved && hasNextStage ? stageOrder[currentIndex + 1] : undefined;
+  const gateState: JourneyGateState = state.status === "COMPLETED" || (!hasNextStage && outputApproved)
+    ? "COMPLETED"
+    : outputApproved ? "READY_FOR_NEXT_AGENT" : currentOutputStatus === "BLOCKED" ? "BLOCKED" : "WAITING_FOR_APPROVAL";
+  const nextAgent = gateState === "READY_FOR_NEXT_AGENT" && nextStage
+    ? String(state.stages?.[nextStage]?.role ?? "UNKNOWN")
+    : stage?.role ? String(stage.role) : undefined;
   return {
     root, workflowId: String(state.workflowId ?? "UNKNOWN"), journeyId: String(state.journeyId ?? "UNKNOWN"),
-    branch: String(state.branch ?? "UNKNOWN"), currentStage: String(state.currentStage ?? "UNKNOWN"), status: String(state.status ?? "UNKNOWN"),
-    artifacts, ...(stage?.role ? { nextRole: String(stage.role) } : {}),
+    branch: String(state.branch ?? "UNKNOWN"), currentStage, status: String(state.status ?? "UNKNOWN"),
+    artifacts, currentOutputStatus, gateState,
+    ...(stage?.role ? { nextRole: String(stage.role) } : {}), ...(nextStage ? { nextStage } : {}), ...(nextAgent ? { nextAgent } : {}),
     sourceTickets: Array.isArray(state.sourceTickets) ? state.sourceTickets.map(String) : [],
     affectedRepositories: Array.isArray(state.affectedRepositories)
       ? state.affectedRepositories.map((repo: any) => typeof repo === "string" ? repo : String(repo.name ?? repo.alias ?? "UNKNOWN")) : [],
