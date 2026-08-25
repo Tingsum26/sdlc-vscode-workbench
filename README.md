@@ -29,6 +29,12 @@ human edits it. The previous REST-backed
 views remain available when no Journey workspace is detected as a Phase 2
 compatibility path.
 
+GitHub Journey PR is the required shared human UI for the GitHub-only MVP. This
+extension remains fully supported as an **optional local companion**: it keeps
+the eight views, next-Agent guidance, suggested Copilot command, local report
+rendering and automatic workspace refresh, but no participant must install it
+to review a report or continue the workflow.
+
 - **Views** (8 registered, M6 model — Repo Task is nested under Ticket): My Work, Scrum
   Master, Epic, Ticket, Identity / Pod Configuration, Customization Center, MCP Center,
   and Diagnostics.
