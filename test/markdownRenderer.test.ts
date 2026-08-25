@@ -16,4 +16,11 @@ describe("Journey Markdown HTML renderer", () => {
     expect(html).toContain('href=\"#\"');
     expect(html).toContain('href=\"https://example.test\"');
   });
+
+  it("renders API surface tables for page and payload reports", () => {
+    const html = markdownToHtml("| Page | API | Field |\n| --- | --- | --- |\n| Review | POST /v1/reviews | applicantId |");
+    expect(html).toContain("<table>");
+    expect(html).toContain("<th scope=\"col\">Page</th>");
+    expect(html).toContain("<td>POST /v1/reviews</td>");
+  });
 });
