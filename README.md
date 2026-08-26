@@ -46,6 +46,9 @@ to review a report or continue the workflow.
 - Live, human-readable HTML rendering for every Agent artifact with missing/
   changed-file feedback; the VSIX never writes or approves the artifact.
 - Reviewed customization-bundle install/rollback with symlink rejection and secret screening.
+- Bundle installation also activates the central `.prompt.md` catalog through
+  `chat.promptFilesLocations`, so users can start an approved role-bound
+  interaction by typing `/` in Copilot Chat.
 - Static MCP catalog mirror plus a loopback-restricted demo-actor guard.
 - Fictional public data throughout (`DEMO-123`, `REPO_A`, `example.invalid`).
 

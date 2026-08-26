@@ -2,7 +2,7 @@
   "name": "sdlc-workbench",
   "displayName": "Local Copilot SDLC Workbench",
   "description": "Human-controlled SDLC state, reports, approvals, MCP onboarding, and diagnostics for local Copilot workflows.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "tingsum26",
   "private": true,
   "license": "MIT",

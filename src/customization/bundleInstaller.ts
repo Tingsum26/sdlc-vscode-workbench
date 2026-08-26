@@ -65,7 +65,8 @@ export async function installCustomizationBundle(context: vscode.ExtensionContex
     const agentsRoot = join(candidate, "agents");
     const skillsRoot = join(candidate, "skills");
     const instructionsRoot = join(candidate, "instructions");
-    await Promise.all([mkdir(agentsRoot, { recursive: true }), mkdir(skillsRoot, { recursive: true }), mkdir(instructionsRoot, { recursive: true })]);
+    const promptsRoot = join(candidate, "prompts");
+    await Promise.all([mkdir(agentsRoot, { recursive: true }), mkdir(skillsRoot, { recursive: true }), mkdir(instructionsRoot, { recursive: true }), mkdir(promptsRoot, { recursive: true })]);
 
     for (const path of manifest.agents) await cp(safeResolve(stagedRoot, path), join(agentsRoot, basename(path)), { force: true });
     for (const path of manifest.skills) {
@@ -75,6 +76,9 @@ export async function installCustomizationBundle(context: vscode.ExtensionContex
     }
     for (const path of manifest.instructions.filter((value) => value.endsWith(".instructions.md"))) {
       await cp(safeResolve(stagedRoot, path), join(instructionsRoot, basename(path)), { force: true });
+    }
+    for (const path of (manifest.prompts ?? []).filter((value) => value.endsWith(".prompt.md"))) {
+      await cp(safeResolve(stagedRoot, path), join(promptsRoot, basename(path)), { force: true });
     }
     await mkdir(dirname(join(candidate, manifestPath)), { recursive: true });
     await cp(safeResolve(stagedRoot, manifestPath), join(candidate, manifestPath), { force: true });
@@ -148,6 +152,7 @@ async function activateBundleTransaction(
   const agents = join(root, "agents");
   const skills = join(root, "skills");
   const instructions = join(root, "instructions");
+  const prompts = join(root, "prompts");
   const chat = vscode.workspace.getConfiguration("chat");
   const chatAgent = vscode.workspace.getConfiguration("chat.agent");
   const previousLocations = context.globalState.get<Record<string, string>>(activeLocationsKey, {});
@@ -159,11 +164,12 @@ async function activateBundleTransaction(
     agentFilesLocations: chat.get<Record<string, boolean>>("agentFilesLocations", {}),
     agentSkillsLocations: chat.get<Record<string, boolean>>("agentSkillsLocations", {}),
     instructionsFilesLocations: chat.get<Record<string, boolean>>("instructionsFilesLocations", {}),
+    promptFilesLocations: chat.get<Record<string, boolean>>("promptFilesLocations", {}),
     hooks: chatAgent.get<Record<string, unknown>>("hooks", {}),
   };
   const hookEntries = await readHookEntries(root);
   const nextLocations = {
-    agentFilesLocations: agents, agentSkillsLocations: skills, instructionsFilesLocations: instructions,
+    agentFilesLocations: agents, agentSkillsLocations: skills, instructionsFilesLocations: instructions, promptFilesLocations: prompts,
   };
   const nextHooks = nextHookSettings(
     priorConfig.hooks, previousHookSettings, context.extensionUri.fsPath, hookEntries,
@@ -173,6 +179,7 @@ async function activateBundleTransaction(
     await chat.update("agentFilesLocations", nextLocation(priorConfig.agentFilesLocations, agents, previousLocations.agentFilesLocations), vscode.ConfigurationTarget.Global);
     await chat.update("agentSkillsLocations", nextLocation(priorConfig.agentSkillsLocations, skills, previousLocations.agentSkillsLocations), vscode.ConfigurationTarget.Global);
     await chat.update("instructionsFilesLocations", nextLocation(priorConfig.instructionsFilesLocations, instructions, previousLocations.instructionsFilesLocations), vscode.ConfigurationTarget.Global);
+    await chat.update("promptFilesLocations", nextLocation(priorConfig.promptFilesLocations, prompts, previousLocations.promptFilesLocations), vscode.ConfigurationTarget.Global);
     await chatAgent.update("hooks", nextHooks.live, vscode.ConfigurationTarget.Global);
     await context.globalState.update(activeLocationsKey, nextLocations);
     await context.globalState.update(activeHookSettingsKey, nextHooks.recorded);
@@ -185,6 +192,7 @@ async function activateBundleTransaction(
       chat.update("agentFilesLocations", priorConfig.agentFilesLocations, vscode.ConfigurationTarget.Global),
       chat.update("agentSkillsLocations", priorConfig.agentSkillsLocations, vscode.ConfigurationTarget.Global),
       chat.update("instructionsFilesLocations", priorConfig.instructionsFilesLocations, vscode.ConfigurationTarget.Global),
+      chat.update("promptFilesLocations", priorConfig.promptFilesLocations, vscode.ConfigurationTarget.Global),
       chatAgent.update("hooks", priorConfig.hooks, vscode.ConfigurationTarget.Global),
       context.globalState.update(activeLocationsKey, previousActiveLocations),
       context.globalState.update(activeHookSettingsKey, previousActiveHooks),

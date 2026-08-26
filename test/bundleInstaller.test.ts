@@ -115,24 +115,27 @@ function writtenSetting(section: string, key: string): unknown {
   return configUpdates.filter((entry) => entry.section === section && entry.key === key).at(-1)?.value;
 }
 
-// A minimal 2.0 bundle source: one agent, one skill, one instruction, a hooks
+// A minimal 2.0 bundle source: one agent, one skill, one instruction, one
+// prompt, a hooks
 // manifest with the given events, an mcp profiles file, and the counts summary.
 function createSourceBundle(bundleId: string, events: Array<{ event: string; action: string }>): string {
   const sourceRoot = mkdtempSync(join(tmpdir(), `sdlc-${bundleId}-source-`));
   mkdirSync(join(sourceRoot, "central", "manifests"), { recursive: true });
   mkdirSync(join(sourceRoot, "central", "agents"), { recursive: true });
   mkdirSync(join(sourceRoot, "central", "instructions"), { recursive: true });
+  mkdirSync(join(sourceRoot, "central", "prompts"), { recursive: true });
   mkdirSync(join(sourceRoot, "central", "skills", "workflow", "start-ticket"), { recursive: true });
   mkdirSync(join(sourceRoot, "central", "hooks"), { recursive: true });
   mkdirSync(join(sourceRoot, "central", "mcp"), { recursive: true });
   writeFileSync(join(sourceRoot, "central", "agents", "a.agent.md"), "a");
   writeFileSync(join(sourceRoot, "central", "instructions", "i.instructions.md"), "i");
+  writeFileSync(join(sourceRoot, "central", "prompts", "start.prompt.md"), "prompt");
   writeFileSync(join(sourceRoot, "central", "skills", "workflow", "start-ticket", "SKILL.md"), "s");
   writeFileSync(join(sourceRoot, "central", "hooks", "hooks-manifest.json"), JSON.stringify({ schemaVersion: "1.0", events }));
   writeFileSync(join(sourceRoot, "central", "hooks", "run-hook.mjs"), "process.exit(0);\n");
   writeFileSync(join(sourceRoot, "central", "mcp", "profiles.json"), JSON.stringify({ schemaVersion: "1.0", profiles: {} }));
   writeFileSync(join(sourceRoot, "central", "manifests", "bundle-manifest.json"), JSON.stringify({
-    bundleId, schemaVersion: "2.0", agents: 1, skills: 1, instructions: 1, policies: 0, templates: 1, hooks: 1, profiles: 1,
+    bundleId, schemaVersion: "2.0", agents: 1, skills: 1, instructions: 1, prompts: 1, policies: 0, templates: 1, hooks: 1, profiles: 1,
   }));
   return sourceRoot;
 }
@@ -143,14 +146,16 @@ describe("customization bundle installer", () => {
     mkdirSync(join(sourceRoot, "central", "manifests"), { recursive: true });
     mkdirSync(join(sourceRoot, "central", "agents"), { recursive: true });
     mkdirSync(join(sourceRoot, "central", "instructions"), { recursive: true });
+    mkdirSync(join(sourceRoot, "central", "prompts"), { recursive: true });
     mkdirSync(join(sourceRoot, "central", "skills", "workflow", "start-ticket"), { recursive: true });
     mkdirSync(join(sourceRoot, "central", "skills", "planning", "estimate"), { recursive: true });
     writeFileSync(join(sourceRoot, "central", "agents", "analyst.agent.md"), "analyst");
     writeFileSync(join(sourceRoot, "central", "instructions", "web.instructions.md"), "instructions");
+    writeFileSync(join(sourceRoot, "central", "prompts", "plan.prompt.md"), "plan prompt");
     writeFileSync(join(sourceRoot, "central", "skills", "workflow", "start-ticket", "SKILL.md"), "start-ticket");
     writeFileSync(join(sourceRoot, "central", "skills", "planning", "estimate", "SKILL.md"), "estimate");
     writeFileSync(join(sourceRoot, "central", "manifests", "bundle-manifest.json"), JSON.stringify({
-      bundleId: "test-bundle", schemaVersion: "2.0", agents: 1, skills: 2, instructions: 1, policies: 0, templates: 1,
+      bundleId: "test-bundle", schemaVersion: "2.0", agents: 1, skills: 2, instructions: 1, prompts: 1, policies: 0, templates: 1,
     }));
 
     const storageRoot = mkdtempSync(join(tmpdir(), "sdlc-install-dest-"));
@@ -171,8 +176,11 @@ describe("customization bundle installer", () => {
 
     const agentsRoot = join(storageRoot, "customizations", "test-bundle", "agents");
     const instructionsRoot = join(storageRoot, "customizations", "test-bundle", "instructions");
+    const promptsRoot = join(storageRoot, "customizations", "test-bundle", "prompts");
     expect(existsSync(join(agentsRoot, "analyst.agent.md"))).toBe(true);
     expect(existsSync(join(instructionsRoot, "web.instructions.md"))).toBe(true);
+    expect(readFileSync(join(promptsRoot, "plan.prompt.md"), "utf8")).toBe("plan prompt");
+    expect(writtenSetting("chat", "promptFilesLocations")).toEqual({ [promptsRoot]: true });
   });
 
   it("rejects a skill install path that traverses outside the skills root", () => {
@@ -268,18 +276,19 @@ describe("customization bundle installer", () => {
   });
 
   it("compensates every partial configuration and global-state activation write", async () => {
-    for (let failure = 1; failure <= 7; failure++) {
+    for (let failure = 1; failure <= 8; failure++) {
       configState.clear();
       configState.set("chat|agentFilesLocations", { "C:\\existing-agent": true });
       configState.set("chat|agentSkillsLocations", { "C:\\existing-skill": true });
       configState.set("chat|instructionsFilesLocations", { "C:\\existing-instruction": true });
+      configState.set("chat|promptFilesLocations", { "C:\\existing-prompt": true });
       configState.set("chat.agent|hooks", { Stop: "user-hook" });
       sourceCopyMutation.configWriteCalls = 0;
-      sourceCopyMutation.failConfigWriteAt = failure <= 4 ? failure : 0;
+      sourceCopyMutation.failConfigWriteAt = failure <= 5 ? failure : 0;
       const sourceRoot = createSourceBundle(`transaction-${failure}`, [{ event: "PreToolUse", action: "guard-dangerous-operations" }]);
       const storageRoot = mkdtempSync(join(tmpdir(), `sdlc-transaction-${failure}-`));
       vi.mocked(vscode.window.showOpenDialog).mockResolvedValue([{ fsPath: sourceRoot } as vscode.Uri]);
-      const stateFailure = failure > 4 ? failure - 4 : 0;
+      const stateFailure = failure > 5 ? failure - 5 : 0;
       const context = createStatefulContext(storageRoot, stateFailure);
 
       await expect(installCustomizationBundle(context)).rejects.toThrow(/forced/);
@@ -287,6 +296,7 @@ describe("customization bundle installer", () => {
       expect(configState.get("chat|agentFilesLocations")).toEqual({ "C:\\existing-agent": true });
       expect(configState.get("chat|agentSkillsLocations")).toEqual({ "C:\\existing-skill": true });
       expect(configState.get("chat|instructionsFilesLocations")).toEqual({ "C:\\existing-instruction": true });
+      expect(configState.get("chat|promptFilesLocations")).toEqual({ "C:\\existing-prompt": true });
       expect(configState.get("chat.agent|hooks")).toEqual({ Stop: "user-hook" });
       expect(context.globalState.get("sdlc.activeCustomizationLocations", undefined)).toBeUndefined();
       expect(context.globalState.get("sdlc.activeCustomizationHookSettings", undefined)).toBeUndefined();
@@ -384,6 +394,7 @@ describe("customization bundle installer", () => {
     expect(writtenSetting("chat", "agentFilesLocations")).toEqual({ [join(v1RootPath, "agents")]: true });
     expect(writtenSetting("chat", "agentSkillsLocations")).toEqual({ [join(v1RootPath, "skills")]: true });
     expect(writtenSetting("chat", "instructionsFilesLocations")).toEqual({ [join(v1RootPath, "instructions")]: true });
+    expect(writtenSetting("chat", "promptFilesLocations")).toEqual({ [join(v1RootPath, "prompts")]: true });
   });
 
   it("removes previously recorded installer hooks when the new bundle declares no hooks and preserves user-managed entries", async () => {

@@ -44,11 +44,13 @@ describe("customization bundle manifest", () => {
     mkdirSync(join(root, "central", "agents"), { recursive: true });
     mkdirSync(join(root, "central", "skills", "workflow", "start-ticket"), { recursive: true });
     mkdirSync(join(root, "central", "instructions"), { recursive: true });
+    mkdirSync(join(root, "central", "prompts"), { recursive: true });
     mkdirSync(join(root, "central", "policies"), { recursive: true });
     mkdirSync(join(root, "central", "evals"), { recursive: true });
     writeFileSync(join(root, "central", "agents", "analyst.agent.md"), "safe");
     writeFileSync(join(root, "central", "skills", "workflow", "start-ticket", "SKILL.md"), "safe");
     writeFileSync(join(root, "central", "instructions", "web.instructions.md"), "safe");
+    writeFileSync(join(root, "central", "prompts", "start.prompt.md"), "safe");
     writeFileSync(join(root, "central", "policies", "stage-gates.json"), "{}");
     writeFileSync(join(root, "central", "evals", "agents-behavior.md"), "safe");
     writeFileSync(join(root, "central", "manifests", "bundle-manifest.json"), JSON.stringify({
@@ -60,6 +62,7 @@ describe("customization bundle manifest", () => {
     expect(manifest.agents).toContain("central/agents/analyst.agent.md");
     expect(manifest.skills).toContain("central/skills/workflow/start-ticket/SKILL.md");
     expect(manifest.instructions).toContain("central/instructions/web.instructions.md");
+    expect(manifest.prompts).toContain("central/prompts/start.prompt.md");
     expect(manifest.policies ?? []).toContain("central/policies/stage-gates.json");
     expect(manifest.evals ?? []).toContain("central/evals/agents-behavior.md");
   });

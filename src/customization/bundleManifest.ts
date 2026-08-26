@@ -8,6 +8,7 @@ export interface BundleManifest {
   agents: string[];
   skills: string[];
   instructions: string[];
+  prompts?: string[];
   policies?: string[];
   schemas?: string[];
   mcpCatalog?: string;
@@ -32,7 +33,7 @@ export function loadAndValidateBundle(root: string, manifestPath: string): Bundl
     throw new Error("Unsupported bundle manifest version");
   }
   for (const path of [...requiredArray(parsed.agents, "agents"), ...requiredArray(parsed.skills, "skills"),
-    ...requiredArray(parsed.instructions, "instructions"), ...(parsed.policies ?? []), ...(parsed.schemas ?? []),
+    ...requiredArray(parsed.instructions, "instructions"), ...(parsed.prompts === undefined ? [] : requiredArray(parsed.prompts, "prompts")), ...(parsed.policies ?? []), ...(parsed.schemas ?? []),
     ...(parsed.mcpCatalog ? [parsed.mcpCatalog] : [])]) {
     const target = safeResolve(safeRoot, path);
     if (!existsSync(target) || (!statSync(target).isFile() && !statSync(target).isDirectory())) {
@@ -77,6 +78,7 @@ function summarizeBundle(safeRoot: string, manifestFile: string, bundleId: strin
     agents: walkFiles(join(centralDir, "agents"), (name) => name.endsWith(".agent.md"), false).map(relativeToRoot),
     skills: walkFiles(join(centralDir, "skills"), (name) => name === "SKILL.md", true).map(relativeToRoot),
     instructions: walkFiles(join(centralDir, "instructions"), (name) => name.endsWith(".instructions.md"), true).map(relativeToRoot),
+    prompts: walkFiles(join(centralDir, "prompts"), (name) => name.endsWith(".prompt.md"), false).map(relativeToRoot),
     policies: walkFiles(join(centralDir, "policies"), (name) => name.endsWith(".json"), false).map(relativeToRoot),
     evals: walkFiles(join(centralDir, "evals"), (name) => name.endsWith(".md"), false).map(relativeToRoot),
   };
