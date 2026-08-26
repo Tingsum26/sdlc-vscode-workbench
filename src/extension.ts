@@ -46,6 +46,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel("Local Copilot SDLC");
   const logger = new ExtensionLogger(output);
   if (activateGitHubOnlyMvp(context, output)) return;
+  if (typeof vscode.commands.executeCommand === "function") void vscode.commands.executeCommand("setContext", "sdlc.githubOnlyMvp", false);
   const config = () => vscode.workspace.getConfiguration("sdlc");
   const client = () => new WorkflowClient(config().get<string>("workflowServiceUrl", "http://127.0.0.1:8080"),
     fetch, config().get<string>("demoActorId") || undefined);

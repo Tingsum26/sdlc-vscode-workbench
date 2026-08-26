@@ -24,8 +24,9 @@ class JourneyProvider implements vscode.TreeDataProvider<JourneyItem> {
   getChildren(): JourneyItem[] {
     const s = this.snapshot;
     const base = [new JourneyItem(`Journey · ${s.journeyId}`, `${s.status} · ${s.currentStage}`, `Workflow ${s.workflowId}\nBranch ${s.branch}`), new JourneyItem("Current stage", s.nextRole ? `${s.currentStage} → ${s.nextRole}` : s.currentStage, "Declared by .sdlc/workflow.json"), new JourneyItem("Gate", `${s.gateState} · output ${s.currentOutputStatus}`, "The gate is derived from workflow.json; no chat history is used")];
+    if (s.diagnostic) return [...base, new JourneyItem("Invalid Journey manifest", s.diagnostic, "Fix .sdlc/workflow.json, then refresh")];
     if (this.section === "sdlc.myWork" || this.section === "sdlc.scrumMaster") {
-      const next = s.gateState === "WAITING_FOR_APPROVAL" ? "等待人工批准当前输出" : s.gateState === "COMPLETED" ? "Journey 已完成" : s.gateState === "BLOCKED" ? "处理阻塞后重试" : `启动 ${s.nextAgent ?? "下一阶段 Agent"}`;
+      const next = s.gateState === "WAITING_FOR_APPROVAL" ? "等待人工批准当前输出" : s.gateState === "DRAFT" ? "继续当前 Agent，先生成并验证输出" : s.gateState === "COMPLETED" ? "Journey 已完成" : s.gateState === "BLOCKED" ? "处理阻塞后重试" : s.gateState === "INVALID" ? "打开 Diagnostics 并修复 workflow.json" : `启动 ${s.nextAgent ?? "下一阶段 Agent"}`;
       const current = s.artifacts.find((artifact) => artifact.id === s.currentOutputId);
       return [...base, new JourneyItem("Next Agent", s.nextAgent ?? "none", "由 stageOrder 和当前输出状态确定"), new JourneyItem("Current Agent Report", `${s.currentOutputStatus} · open HTML`, s.currentOutputPath ?? "No current output", s.currentOutputPath, current?.status, current?.receipt), new JourneyItem("Next action", next, `Copilot: /resume-workflow ${s.workflowId}`), new JourneyItem("Tickets", s.sourceTickets.join(", ") || "none", "Source tickets in workflow.json")];
     }
@@ -37,6 +38,7 @@ class JourneyProvider implements vscode.TreeDataProvider<JourneyItem> {
 export function activateGitHubOnlyMvp(context: vscode.ExtensionContext, output: vscode.OutputChannel): boolean {
   const roots = (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath);
   const root = findJourneyWorkspace(roots); if (!root) return false;
+  if (typeof vscode.commands.executeCommand === "function") void vscode.commands.executeCommand("setContext", "sdlc.githubOnlyMvp", true);
   const providers = mvpViewIds.map((id) => new JourneyProvider(root, id));
   for (let index = 0; index < mvpViewIds.length; index += 1) context.subscriptions.push(vscode.window.registerTreeDataProvider(mvpViewIds[index]!, providers[index]!));
   const refresh = (): void => providers.forEach((provider) => provider.refresh());

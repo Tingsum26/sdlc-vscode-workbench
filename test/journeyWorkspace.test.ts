@@ -29,7 +29,7 @@ describe("GitHub-only Journey workspace", () => {
       expect(snapshot.currentStage).toBe("REQUIREMENTS");
       expect(snapshot.nextRole).toBe("requirement-analyst");
       expect(snapshot.nextAgent).toBe("requirement-analyst");
-      expect(snapshot.gateState).toBe("WAITING_FOR_APPROVAL");
+      expect(snapshot.gateState).toBe("DRAFT");
       expect(snapshot.currentOutputStatus).toBe("DRAFT");
       expect(snapshot.currentOutputId).toBe("REQUIREMENT_CONTRACT");
       expect(snapshot.currentOutputPath).toBe("docs/02-requirements/requirement-contract.md");

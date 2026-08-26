@@ -26,16 +26,15 @@ export function markdownToHtml(markdown: string): string {
   const lines = parseFrontMatter(markdown).body.split(/\r?\n/);
   const output: string[] = [];
   let code = false;
-  let codeLanguage = "";
   let list = false;
   let table = false;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
     if (line.trim().startsWith("```")) {
-      if (code) { output.push("</code></pre>"); codeLanguage = ""; }
+      if (code) { output.push("</code></pre>"); }
       else {
-        codeLanguage = line.trim().slice(3).trim().toLowerCase();
-        output.push(`<pre class="code ${codeLanguage === "mermaid" ? "diagram" : ""}"><code>`);
+        const codeLanguage = line.trim().slice(3).trim().toLowerCase();
+        output.push(`<pre class="code${codeLanguage === "mermaid" ? " diagram" : ""}"><code>`);
       }
       code = !code;
       continue;

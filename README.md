@@ -11,9 +11,11 @@ slice of the seven-repository platform split.
 
 ## What this extension is
 
-The workbench is a **UI-only** VS Code extension. It renders SDLC state, reports, approvals,
-MCP onboarding, and diagnostics into the Activity Bar, and it issues REST calls to a local
-Workflow Service. It contains no model client of any kind.
+The workbench is a **UI-only** VS Code extension. In the accepted GitHub-only
+MVP it renders checked-out Journey state, reports, next-step guidance and
+diagnostics without calling a service. The older REST/Workflow-Service views
+remain an explicitly Phase 2 compatibility path. It contains no model client
+of any kind.
 
 ## GitHub-only MVP mode
 
@@ -25,7 +27,8 @@ Workflow Service, Workflow MCP, MongoDB, or Jenkins. File changes under
 `.sdlc/` and `docs/` refresh the views automatically. Every Journey artifact
 Markdown row is clickable and opens a script-free HTML Agent Report; the
 report panel watches that file and updates when an Agent, `git pull`, or a
-human edits it. The previous REST-backed
+human edits it. The report panel uses a narrowly scoped CSP-protected refresh
+script; it does not execute report content. The previous REST-backed
 views remain available when no Journey workspace is detected as a Phase 2
 compatibility path.
 
@@ -50,8 +53,10 @@ to review a report or continue the workflow.
 
 **This VSIX invokes NO AI models directly.** It never calls `vscode.lm`, `selectChatModels`,
 `sendRequest`, or any language-model API. All AI reasoning runs in the interactive VS Code
-GitHub Copilot Chat session the user starts and supervises, and all workflow tool access goes
-through the **Local MCP Gateway** (`sdlc-workflow-mcp`), never from inside this extension.
+GitHub Copilot Chat session the user starts and supervises. In GitHub-only MVP,
+the extension neither calls Workflow MCP nor mutates workflow state; optional
+local MCPs are user-run context connectors only. Workflow MCP is a Phase 2
+deterministic integration option.
 
 ## Views
 

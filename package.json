@@ -87,8 +87,8 @@
         { "command": "sdlc.rollbackBundleTo", "when": "view == sdlc.customization && viewItem == sdlc.bundle", "group": "sdlc@1" }
       ],
       "view/title": [
-        { "command": "sdlc.createEpic", "when": "view == sdlc.epic", "group": "sdlc@1" },
-        { "command": "sdlc.importPodRoster", "when": "view == sdlc.identityPod", "group": "sdlc@1" }
+        { "command": "sdlc.createEpic", "when": "view == sdlc.epic && !sdlc.githubOnlyMvp", "group": "sdlc@1" },
+        { "command": "sdlc.importPodRoster", "when": "view == sdlc.identityPod && !sdlc.githubOnlyMvp", "group": "sdlc@1" }
       ]
     },
     "configuration": {
